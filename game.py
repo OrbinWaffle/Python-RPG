@@ -3,7 +3,7 @@ import time
 
 player_health = 100
 dodge_chance = 10
-escape_chance = 25
+escape_chance = 100
 attack_stat = 1
 hit_chance = 90
 encounter_chance = 30
@@ -13,7 +13,11 @@ temp_damage_mod = 0
 monster_health = 0
 
 inventory = []
-loot_types = [("apple", 0, "HEALTH/5", False), ("powerful potion", 1, "DAMAGE_MOD/3", False), ("bomb", 2, "DAMAGE/5", False)]
+# name, description, item_id, effect, whether it is an instant use item
+loot_types = [
+   ("apple", "Heals for 5 HP.", 0, "HEALTH/5", False),
+   ("powerful potion", "Buffs attack by 3. Lasts until the end of a battle.", 1, "DAMAGE_MOD/3", False),
+   ("bomb", "Instantly deals 5 damage to the enemy.", 2, "DAMAGE/5", False)]
 interactable_types = ["Door", "Chest"]
 door_types = ["door", "trapdoor", "doorway", "small arch"]
 chest_descriptors = ["dusty", "old", "shiny", "metal", "cobweb-covered", "chipped", "corroded", "splintered"]
@@ -34,6 +38,11 @@ room_type = ""
 # View various statistics about the player, such as health and inventory.
 def view_stats():
    print("Current HP:", player_health)
+   time.sleep(0.5)
+   if(monster_health > 0):
+      print("Monster HP:", monster_health)
+      time.sleep(0.5)
+   print("Your current damage:", (attack_stat + temp_damage_mod))
    time.sleep(0.5)
    print("Inventory: ")
    time.sleep(0.5)
@@ -114,7 +123,7 @@ def open_chest(index):
    if(chest[3] == True and chest_check <= loot_chance):
       loot_found = loot_types[random.randrange(0, len(loot_types))]
       print("You find a {0}!".format(loot_found[0]))
-      if(loot_found[3] == False):
+      if(loot_found[4] == False):
          edit_inventory(loot_found, 1)
    else:
       print("You find nothing.")      
@@ -145,6 +154,7 @@ def edit_inventory_index(index, amount):
 def combat_encounter():
    global player_health
    global monster_health
+   global temp_damage_mod
 
    # Randomize monster description
    descriptor = monster_descriptors[random.randrange(0, len(monster_descriptors))]
@@ -172,6 +182,7 @@ def combat_encounter():
                print("You {0} the {1} {2}!".format(attack_text, descriptor, monster))
                time.sleep(0.5)
                attack_check = random.randrange(0, 100)
+               # mod_attack is the actual damage value, adding the attack stat and any bonuses
                mod_attack = attack_stat + temp_damage_mod
                if(attack_check <= hit_chance):
                   print("Your hit lands and you deal {0} damage.".format(mod_attack))
@@ -185,6 +196,9 @@ def combat_encounter():
                print("You attempt to run away...")
                time.sleep(1)
                if(run_check <= escape_chance):
+                  # reset bonuses and exit function
+                  temp_damage_mod = 0
+                  monster_health = 0
                   print("You escape!")
                   return
                else:
@@ -193,6 +207,10 @@ def combat_encounter():
                view_stats()
             case "ITEM":
                select_item()
+               print("\nThe {2} {3} has {0} HP.\nYou have {1} HP.".format(monster_health, player_health, descriptor, monster))
+            
+         if(monster_health <= 0):
+            break
                
       if(monster_health > 0):
          print("The {0} {1} lunges at you!".format(descriptor, monster))
@@ -204,14 +222,18 @@ def combat_encounter():
             print("The monster deals {0} damage.".format(monster_attack))
             player_health -= monster_attack
          time.sleep(0.5)
+      
+      # player health check
       if(player_health <= 0):
          player_dead()
+   # reset bonuses and exit function
+   temp_damage_mod = 0
    print("\nYou slay the {0} {1}!".format(descriptor, monster))
 
 def select_item():
    print("Which item do you want to use? (type \"cancel\" to cancel.)")
    for i, item in enumerate(inventory):
-      print(str(i+1) + ":", item[0][0], "x" + str(item[1]))
+      print(str(i+1) + ":", item[0][0], "x" + str(item[1]), item[0][1])
       time.sleep(0.25)
    player_input = input("Enter your command (Type \"help\" for a list of commands): ")
    player_input = player_input.upper()
@@ -221,7 +243,7 @@ def select_item():
       case _:
          if(player_input.isdigit()):
             selection_num = int(player_input) - 1
-            use_item(inventory[selection_num][1])
+            use_item(inventory[selection_num][0][2])
             edit_inventory_index(selection_num, -1)
             print("You used a {0}!".format(inventory[selection_num][0][0]))
 
@@ -229,8 +251,7 @@ def use_item(item_id):
    global player_health
    global temp_damage_mod
    global monster_health
-   effect = loot_types[item_id][2].split("/")
-   print(effect[0], effect[1])
+   effect = loot_types[item_id][3].split("/")
    match effect[0]:
       case "HEALTH":
          player_health += int(effect[1])
