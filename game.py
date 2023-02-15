@@ -18,20 +18,23 @@ monsters_encountered = 0
 inventory = []
 # name, description, item_id, effect, whether it is an instant use item
 loot_types = [
-   ("apple", "Heals for 3 HP.", 0, "HEALTH/3", False),
-   ("bread", "Heals for 5 HP.", 1, "HEALTH/5", False),
-   ("health potion", "Heals for 5 HP.", 2, "HEALTH/10", False),
-   ("powerful potion", "Buffs attack by 3. Lasts until the end of a battle.", 3, "DAMAGE_MOD/3", False),
-   ("ultra potion", "Buffs attack by 5. Lasts until the end of a battle.", 4, "DAMAGE_MOD/5", False),
-   ("bomb", "Instantly deals 5 damage to the enemy.", 5, "DAMAGE/5", False),
-   ("powerful ring", "Your attack stat has been permanently boosted by 1!", 6, "PERM_DAMAGE/1", True),
-   ("lucky ring", "Your loot chance has been permanently increased by 3%!", 7, "PERM_LOOT/3", True),
-   ("healthy snack", "Your maximum HP has been permanently increased by 5!", 8, "PERM_HEALTH/5", True)]
+   (0, "apple", "Heals for 5 HP.", "HEALTH/5", False),
+   (1, "loaf of bread", "Heals for 10 HP.", "HEALTH/10", False),
+   (2, "health potion", "Heals for 20 HP.", "HEALTH/20", False),
+   (3, "powerful potion", "Buffs attack by 3. Lasts until the end of a battle.", "DAMAGE_MOD/3", False),
+   (4, "ultra potion", "Buffs attack by 5. Lasts until the end of a battle.", "DAMAGE_MOD/5", False),
+   (5, "bomb", "Instantly deals 5 damage to the enemy.", "DAMAGE/5", False),
+   (6, "bomb", "Instantly deals 5 damage to the enemy.", "DAMAGE/5", False),
+   (7, "powerful ring", "Your attack stat has been permanently boosted by 1!", "PERM_DAMAGE/1", True),
+   (8, "sharpening stone", "Your attack stat has been permanently boosted by 2!", "PERM_DAMAGE/2", True),
+   (9, "lucky ring", "Your loot chance has been permanently increased by 3%!", "PERM_LOOT/3", True),
+   (10, "healthy snack", "Your maximum HP has been permanently increased by 5!", "PERM_HEALTH/5", True),
+   (11, "mysterious elixr", "Your maximum HP has been permanently increased by 10!", "PERM_HEALTH/10", True)]
 interactable_types = ["Door", "Chest"]
-door_types = ["door", "trapdoor", "doorway", "small arch"]
+door_types = ["door", "trapdoor", "doorway", "small arch", "secret passage", "gate", "stairwell"]
 chest_descriptors = ["dusty", "old", "shiny", "metal", "cobweb-covered", "chipped", "corroded", "splintered"]
-chest_types = ["chest", "dresser", "cabinet", "box", "crate", "barrel"]
-monster_descriptors = ["hairy", "slimy", "grotesque", "snarling", "ugly", "dastardly"]
+chest_types = ["chest", "dresser", "cabinet", "box", "crate", "barrel", "locker"]
+monster_descriptors = ["hairy", "slimy", "grotesque", "snarling", "ugly", "dastardly", "foul"]
 monster_list = ["monster", "beast", "monstrosity", "creature", "spider", "zombie", "skeleton", "ogre", "cockroach", "goblin", "vampire", "slime"]
 encounter_list = ["appears", "pops out at you", "attacks you", "emerges from the shadows", "falls from the ceiling", "bursts from a nearby doorway"]
 attack_list = ["lunge at", "swing your sword at", "fire your bow at", "punch", "kick", "slash at", "backhand"]
@@ -60,7 +63,7 @@ def print_inventory():
    print("{0:<3} {1:<20} {2:<10} {3}".format(" ", "Item", "Count", "Description"))
    time.sleep(0.25)
    for i, item in enumerate(inventory):
-      print("{0:<3} {1:<20} {2:<10} {3}".format(str(i+1) + ":", item[0][0], item[1], item[0][1]))
+      print("{0:<3} {1:<20} {2:<10} {3}".format(str(i+1) + ":", item[0][1], item[1], item[0][2]))
       time.sleep(0.25)
 
 # Enter a new room and randomly generate its contents
@@ -136,13 +139,13 @@ def open_chest(index):
    print()
    if(chest[3] == True and chest_check <= loot_chance):
       loot_found = loot_types[random.randrange(0, len(loot_types))]
-      print("You find a {0}!".format(loot_found[0]))
+      print("You find a {0}!".format(loot_found[1]))
       if(loot_found[4] == False):
          edit_inventory(loot_found, 1)
       else:
-         print(loot_found[1])
+         print(loot_found[2])
          time.sleep(0.5)
-         use_item(loot_found[2])
+         use_item(loot_found[0])
    else:
       print("You find nothing.")      
    temp_chest = list(chest)
@@ -204,10 +207,10 @@ def combat_encounter():
                time.sleep(0.5)
                attack_check = random.randrange(0, 100)
                # mod_attack is the actual damage value, adding the attack stat and any bonuses
-               mod_attack = attack_stat + temp_damage_mod
+               final_attack_val = attack_stat + temp_damage_mod
                if(attack_check <= hit_chance):
-                  print("Your hit lands and you deal {0} damage.".format(mod_attack))
-                  monster_health -= mod_attack
+                  print("Your hit lands and you deal {0} damage.".format(final_attack_val))
+                  monster_health -= final_attack_val
                else:
                   print("You miss!")
                time.sleep(0.5)
@@ -228,7 +231,7 @@ def combat_encounter():
                view_stats()
             case "ITEM":
                select_item()
-               print("\nThe {2} {3} has {0} HP.\nYou have {1} HP.".format(monster_health, player_health, descriptor, monster))
+               print("\nThe {0} {1} has {2} HP.\nYou have {3}/{4} HP.".format(descriptor, monster, monster_health, player_health, max_health))
             case "QUIT":
                quit()
             case "HELP":
@@ -244,8 +247,9 @@ def combat_encounter():
          if(dodge_check <= dodge_chance):
             print("You dodge the attack!")
          else:
-            print("The monster deals {0} damage.".format(monster_attack))
-            player_health -= monster_attack
+            final_monster_attack = random.randrange(1, monster_attack)
+            print("The monster deals {0} damage.".format(final_monster_attack))
+            player_health -= final_monster_attack
          time.sleep(0.5)
       
       # player health check
@@ -256,7 +260,7 @@ def combat_encounter():
    print("\nYou slay the {0} {1}!".format(descriptor, monster))
 
 def select_item():
-   print("Which item do you want to use? (type \"cancel\" to cancel.)")
+   print("Which item do you want to use? Input its index number. (type \"cancel\" to cancel.)")
    print_inventory()
    player_input = input("Enter your command (Type \"help\" for a list of commands): ")
    player_input = player_input.upper()
@@ -266,7 +270,7 @@ def select_item():
       case _:
          if(player_input.isdigit()):
             selection_num = int(player_input) - 1
-            use_item(inventory[selection_num][0][2])
+            use_item(inventory[selection_num][0][0])
             edit_inventory_index(selection_num, -1)
             print("You used a {0}!".format(inventory[selection_num][0][0]))
 
@@ -301,6 +305,16 @@ def player_dead():
    print("You died!")
    quit()
 
+# Begin of main game loop
+
+print("You find yourself in a large, mysterious mansion.")
+time.sleep(0.5)
+print("Explore rooms...")
+time.sleep(0.5)
+print("Find loot...")
+time.sleep(0.5)
+print("And try not to fall to the numerous creatures lurking in the shadows...")
+time.sleep(0.5)
 room_descriptor = "large"
 room_type = "entryway"
 enter_room()
