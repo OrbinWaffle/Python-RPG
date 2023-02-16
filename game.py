@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import random
 import time
 
@@ -14,6 +16,7 @@ temp_damage_mod = 0
 monster_health = 0
 
 monsters_encountered = 0
+rooms_traversed = 0
 
 inventory = []
 # name, description, item_id, effect, whether it is an instant use item
@@ -24,11 +27,11 @@ loot_types = [
    (3, "powerful potion", "Buffs attack by 3. Lasts until the end of a battle.", "DAMAGE_MOD/3", False),
    (4, "ultra potion", "Buffs attack by 5. Lasts until the end of a battle.", "DAMAGE_MOD/5", False),
    (5, "bomb", "Instantly deals 5 damage to the enemy.", "DAMAGE/5", False),
-   (6, "bomb", "Instantly deals 5 damage to the enemy.", "DAMAGE/5", False),
+   (6, "big bomb", "Instantly deals 10 damage to the enemy.", "DAMAGE/10", False),
    (7, "powerful ring", "Your attack stat has been permanently boosted by 1!", "PERM_DAMAGE/1", True),
    (8, "sharpening stone", "Your attack stat has been permanently boosted by 2!", "PERM_DAMAGE/2", True),
    (9, "lucky ring", "Your loot chance has been permanently increased by 3%!", "PERM_LOOT/3", True),
-   (10, "healthy snack", "Your maximum HP has been permanently increased by 5!", "PERM_HEALTH/5", True),
+   (10, "red gemstone", "Your maximum HP has been permanently increased by 5!", "PERM_HEALTH/5", True),
    (11, "mysterious elixr", "Your maximum HP has been permanently increased by 10!", "PERM_HEALTH/10", True)]
 interactable_types = ["Door", "Chest"]
 door_types = ["door", "trapdoor", "doorway", "small arch", "secret passage", "gate", "stairwell"]
@@ -49,6 +52,8 @@ room_type = ""
 
 # View various statistics about the player, such as health and inventory.
 def view_stats():
+   print("Room traversed: {0}".format(rooms_traversed))
+   print("Monsters encountered: {0}".format(monsters_encountered))
    print("Current HP: {0}/{1}".format(player_health, max_health))
    time.sleep(0.5)
    if(monster_health > 0):
@@ -69,6 +74,8 @@ def print_inventory():
 # Enter a new room and randomly generate its contents
 def enter_room():
    global interactables
+   global rooms_traversed
+   rooms_traversed += 1
    interactables = []
    index = 0
    num_of_interactables = random.randrange(2, 6)
@@ -160,6 +167,8 @@ def edit_inventory(item, amount):
          temp_item = list(inventory_item)
          temp_item[1] += amount
          inventory[i] = tuple(temp_item)
+         if(inventory[i][1] == 0):
+            del(inventory[i])
          break
    else:
       inventory.append((item, amount))
@@ -170,6 +179,8 @@ def edit_inventory_index(index, amount):
    temp_item = list(inventory_item)
    temp_item[1] += amount
    inventory[index] = tuple(temp_item)
+   if(inventory[index][1] == 0):
+      del(inventory[index])
 
 # Method to process a combat encounter
 def combat_encounter():
@@ -235,7 +246,7 @@ def combat_encounter():
             case "QUIT":
                quit()
             case "HELP":
-               print("attack: Attack the monster.\nrun: Attempt to escape.\nstatus: View current status.\nquit: Exit the game.")
+               print("\nattack: Attack the monster.\nrun: Attempt to escape.\nstatus: View current status.\nquit: Exit the game.")
             
          if(monster_health <= 0):
             break
@@ -247,7 +258,7 @@ def combat_encounter():
          if(dodge_check <= dodge_chance):
             print("You dodge the attack!")
          else:
-            final_monster_attack = random.randrange(1, monster_attack)
+            final_monster_attack = random.randrange(1, monster_attack + 1)
             print("The monster deals {0} damage.".format(final_monster_attack))
             player_health -= final_monster_attack
          time.sleep(0.5)
@@ -260,9 +271,9 @@ def combat_encounter():
    print("\nYou slay the {0} {1}!".format(descriptor, monster))
 
 def select_item():
-   print("Which item do you want to use? Input its index number. (type \"cancel\" to cancel.)")
+   print("Which item do you want to use?")
    print_inventory()
-   player_input = input("Enter your command (Type \"help\" for a list of commands): ")
+   player_input = input("Input its index number. (type \"cancel\" to cancel.): ")
    player_input = player_input.upper()
    match player_input:
       case "cancel":
@@ -270,9 +281,10 @@ def select_item():
       case _:
          if(player_input.isdigit()):
             selection_num = int(player_input) - 1
+            print("You used a {0}!".format(inventory[selection_num][0][1]))
             use_item(inventory[selection_num][0][0])
             edit_inventory_index(selection_num, -1)
-            print("You used a {0}!".format(inventory[selection_num][0][0]))
+            time.sleep(0.5)
 
 def use_item(item_id):
    global player_health
@@ -297,12 +309,16 @@ def use_item(item_id):
          loot_chance += int(effect[1])
       case "PERM_HEALTH":
          max_health += int(effect[1])
+         player_health += int(effect[1])
 
 def view_commands():
-   print("Type a number to interact with the corresponding object.\nstatus: View current status.\look: repeat room description.\nquit: Exit the game.")
+   print("\nType a number to interact with the corresponding object.\nstatus: View current status.\nlook: Repeat room description.\nquit: Exit the game.")
 
 def player_dead():
-   print("You died!")
+   time.sleep(0.5)
+   print("/n/n/nYou died!")
+   time.sleep(0.5)
+   print("You traversed {0} rooms and encountered {1} monsters.".format(rooms_traversed, monsters_encountered))
    quit()
 
 # Begin of main game loop
