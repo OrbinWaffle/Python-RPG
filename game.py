@@ -240,13 +240,13 @@ def combat_encounter():
                   print("You did not escape...")         
             case "STATUS":
                view_stats()
-            case "ITEM":
+            case "ITEMS":
                select_item()
                print("\nThe {0} {1} has {2} HP.\nYou have {3}/{4} HP.".format(descriptor, monster, monster_health, player_health, max_health))
             case "QUIT":
                quit()
             case "HELP":
-               print("\nattack: Attack the monster.\nrun: Attempt to escape.\nstatus: View current status.\nquit: Exit the game.")
+               print("\nattack: Attack the monster.\nrun: Attempt to escape.\nstatus: View current status.\nitems: Use an item.\nquit: Exit the game.")
             
          if(monster_health <= 0):
             break
