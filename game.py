@@ -316,7 +316,7 @@ def view_commands():
 
 def player_dead():
    time.sleep(0.5)
-   print("/n/n/nYou died!")
+   print("\n\nYou died!")
    time.sleep(0.5)
    print("You traversed {0} rooms and encountered {1} monsters.".format(rooms_traversed, monsters_encountered))
    quit()
