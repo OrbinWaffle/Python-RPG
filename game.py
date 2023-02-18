@@ -33,6 +33,9 @@ loot_types = [
    (9, "lucky ring", "Your loot chance has been permanently increased by 3%!", "PERM_LOOT/3", True),
    (10, "red gemstone", "Your maximum HP has been permanently increased by 5!", "PERM_HEALTH/5", True),
    (11, "mysterious elixr", "Your maximum HP has been permanently increased by 10!", "PERM_HEALTH/10", True)]
+
+# Large lists of randomized descriptors
+# This way, the player will see randomized locations, monsters, etc.
 interactable_types = ["Door", "Chest"]
 door_types = ["door", "trapdoor", "doorway", "small arch", "secret passage", "gate", "stairwell"]
 chest_descriptors = ["dusty", "old", "shiny", "metal", "cobweb-covered", "chipped", "corroded", "splintered"]
@@ -78,8 +81,10 @@ def enter_room():
    rooms_traversed += 1
    interactables = []
    index = 0
+   # Randomize the number of interactable in the room, then create each one
    num_of_interactables = random.randrange(2, 6)
    while(index < num_of_interactables):
+      # Randomize whether the interactable is a door or a chest
       interactable_type = interactable_types[random.randrange(0, len(interactable_types))] if not index == num_of_interactables-1 else "Door"
       if(interactable_type == "Door"):
          door_type = door_types[random.randrange(0, len(door_types))]
@@ -100,6 +105,7 @@ def view_room():
    print("You see:")
    time.sleep(0.5)
    index = 0
+   # Loops through all the interactables and prints their information
    while(index < len(interactables)):
       interactable = interactables[index]
       interactable_type = interactable[0]
@@ -116,6 +122,9 @@ def view_room():
       index += 1
       time.sleep(0.1)
 
+# interact with a certain interactable.
+# If it is a door, generate a new set of interactables.
+# If it is a chest, open the chest.
 def interact(index_of_interactable):
    global room_descriptor
    global room_type
@@ -139,6 +148,8 @@ def interact(index_of_interactable):
       time.sleep(0.5)
       open_chest(index_of_interactable)
 
+# When the player opens a chest, this method runs a check so see if they find anything
+# If they do find something, it randomly picks an item from the loot_types to give them
 def open_chest(index):
    global interactables
    chest = interactables[index]
@@ -147,8 +158,10 @@ def open_chest(index):
    if(chest[3] == True and chest_check <= loot_chance):
       loot_found = loot_types[random.randrange(0, len(loot_types))]
       print("You find a {0}!".format(loot_found[1]))
+      # If it is a consumable item, add to inventory
       if(loot_found[4] == False):
          edit_inventory(loot_found, 1)
+      # If it is an instant-use item, immediately apply effects
       else:
          print(loot_found[2])
          time.sleep(0.5)
@@ -160,6 +173,9 @@ def open_chest(index):
    interactables[index] = tuple(temp_chest)
    time.sleep(0.5)
 
+# Edits the player's inventory. Will search for a particular item and increment its count
+# If the item does not already exist, add a new entry
+# If the item is decremented to 0, remove it from the list
 def edit_inventory(item, amount):
    global inventory
    for i, inventory_item in enumerate(inventory):
@@ -173,6 +189,7 @@ def edit_inventory(item, amount):
    else:
       inventory.append((item, amount))
 
+# Does the same as the above method, but uses an item index instead of a reference to the item itself
 def edit_inventory_index(index, amount):
    global inventory
    inventory_item = inventory[index]
@@ -194,6 +211,9 @@ def combat_encounter():
    monster = monster_list[random.randrange(0, len(monster_list))]
    encounter_text = encounter_list[random.randrange(0, len(encounter_list))]
 
+   # Randomize monster health
+   # Scale monster health and damage based on the amount of monsters already seen
+   # This way, the longer the user plays, the harder the monsters get
    monster_health = random.randrange(1, 10) * int((1 + (monsters_encountered * 0.20)))
    monster_attack = random.randrange(1, 10) * int((1 + (monsters_encountered * 0.20)))
    
@@ -216,9 +236,10 @@ def combat_encounter():
                attack_text = attack_list[random.randrange(0, len(attack_list))]
                print("You {0} the {1} {2}!".format(attack_text, descriptor, monster))
                time.sleep(0.5)
-               attack_check = random.randrange(0, 100)
                # mod_attack is the actual damage value, adding the attack stat and any bonuses
                final_attack_val = attack_stat + temp_damage_mod
+               # Do a random check to see if the player hits the enemy or not
+               attack_check = random.randrange(0, 100)
                if(attack_check <= hit_chance):
                   print("Your hit lands and you deal {0} damage.".format(final_attack_val))
                   monster_health -= final_attack_val
@@ -227,6 +248,7 @@ def combat_encounter():
                time.sleep(0.5)
             case "RUN":
                made_selection = True
+               # Do a random check to see if the player successfuly runs away
                run_check = random.randrange(0, 100)
                print("You attempt to run away...")
                time.sleep(1)
@@ -250,7 +272,8 @@ def combat_encounter():
             
          if(monster_health <= 0):
             break
-               
+      # Monster turn
+      # Monster will attack the player with a slightly randomized attack stat, provided they are still alive  
       if(monster_health > 0):
          print("The {0} {1} lunges at you!".format(descriptor, monster))
          time.sleep(0.5)
@@ -270,6 +293,7 @@ def combat_encounter():
    temp_damage_mod = 0
    print("\nYou slay the {0} {1}!".format(descriptor, monster))
 
+# Bring up item use prompt
 def select_item():
    print("Which item do you want to use?")
    print_inventory()
@@ -286,6 +310,7 @@ def select_item():
             edit_inventory_index(selection_num, -1)
             time.sleep(0.5)
 
+# Resolve the effects of a particular item in the player's inventory
 def use_item(item_id):
    global player_health
    global max_health
@@ -314,6 +339,7 @@ def use_item(item_id):
 def view_commands():
    print("\nType a number to interact with the corresponding object.\nstatus: View current status.\nlook: Repeat room description.\nquit: Exit the game.")
 
+# Print out stats and then exit program
 def player_dead():
    time.sleep(0.5)
    print("\n\nYou died!")
